@@ -1,10 +1,10 @@
 package com.accounts.controller;
 
 import com.accounts.config.AccountsServiceConfig;
-import com.accounts.model.Accounts;
-import com.accounts.model.Customer;
-import com.accounts.model.Properties;
+import com.accounts.model.*;
 import com.accounts.repository.AccountsRepository;
+import com.accounts.service.client.CardsFeignClient;
+import com.accounts.service.client.LoansFeignClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -29,6 +29,12 @@ public class AccountsController {
     @Autowired
     AccountsServiceConfig accountsConfig;
 
+
+    private final LoansFeignClient loansFeignClient;
+
+
+    private final CardsFeignClient cardsFeignClient;
+
     @PostMapping("/myAccount")
     public Accounts getAccountDetails(@RequestBody Customer customer) {
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
@@ -50,6 +56,7 @@ public class AccountsController {
             return null;
         }
     }
+
     @GetMapping("/account/properties")
     public String getPropertyDetails() throws JsonProcessingException {
         ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
@@ -59,4 +66,18 @@ public class AccountsController {
         String jsonStr = objectWriter.writeValueAsString(properties);
         return jsonStr;
     }
+
+    @PostMapping("myCustomerDetails")
+    public CustomerDetails myCustomerDetails(@RequestBody Customer customer){
+        Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
+        List<Loans> loans = loansFeignClient.getLoansDetails(customer);
+        List<Cards> cards = cardsFeignClient.getCardDetails(customer);
+
+        CustomerDetails customerDetails = new CustomerDetails();
+        customerDetails.setAccounts(accounts);
+        customerDetails.setLoans(loans);
+        customerDetails.setCards(cards);
+        return customerDetails;
+    }
+
 }
