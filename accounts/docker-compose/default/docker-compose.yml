@@ -7,6 +7,8 @@ services:
       - "8071:8071"
     networks:
       - serviceBank
+
+
   eurekaserver:
     image: tihamers/eurekaserver:latest
     mem_limit: 700m
@@ -49,7 +51,6 @@ services:
       SPRING_CONFIG_IMPORT: configserver:http://configserver:8071/
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8070/eureka/
 
-
   loans:
     image: tihamers/loans:latest
     mem_limit: 700m
@@ -80,7 +81,7 @@ services:
       - serviceBank
     depends_on:
       - configserver
-      - eurkaserver
+      - eurekaserver
     deploy:
       restart_policy:
         condition: on-failure
