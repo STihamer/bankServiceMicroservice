@@ -26,6 +26,7 @@ private final LoansServiceConfig loansServiceConfig;
 
     @PostMapping("/myLoans")
     public List<Loans> getLoansDetails(@RequestBody Customer customer) {
+        System.out.println("Invoking Loans Microservice");
         List<Loans> loans = loansRepository.findAllByCustomerIdOrderByStartDtDesc(customer.getCustomerId());
         if (loans != null) {
             return loans;

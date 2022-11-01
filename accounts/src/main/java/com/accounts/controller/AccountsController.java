@@ -9,6 +9,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +33,10 @@ public class AccountsController {
     AccountsServiceConfig accountsConfig;
 
     @Autowired
-     LoansFeignClient loansFeignClient;
+    LoansFeignClient loansFeignClient;
 
     @Autowired
-     CardsFeignClient cardsFeignClient;
+    CardsFeignClient cardsFeignClient;
 
     @PostMapping("/myAccount")
     public Accounts getAccountDetails(@RequestBody Customer customer) {
@@ -69,8 +71,8 @@ public class AccountsController {
     }
 
     @PostMapping("myCustomerDetails")
-    @CircuitBreaker(name="detailsForCustomerSupportApp", fallbackMethod = "myCustomerDetailsFallBack")
-    public CustomerDetails myCustomerDetails(@RequestBody Customer customer){
+    @CircuitBreaker(name = "detailsForCustomerSupportApp", fallbackMethod = "myCustomerDetailsFallBack")
+    public CustomerDetails myCustomerDetails(@RequestBody Customer customer) {
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
         List<Loans> loans = loansFeignClient.getLoansDetails(customer);
         List<Cards> cards = cardsFeignClient.getCardDetails(customer);
@@ -82,13 +84,37 @@ public class AccountsController {
         return customerDetails;
     }
 
-    private CustomerDetails myCustomerDetailsFallBack(Customer customer, Throwable t){
+    @PostMapping("myRetryPattern")
+    @Retry(name ="retryForCustomerDetails", fallbackMethod = "myCustomerDetailsFallBack")
+    public CustomerDetails myRetryPattern(@RequestBody Customer customer) {
+        Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
+        List<Loans> loans = loansFeignClient.getLoansDetails(customer);
+        List<Cards> cards = cardsFeignClient.getCardDetails(customer);
+
+        CustomerDetails customerDetails = new CustomerDetails();
+        customerDetails.setAccounts(accounts);
+        customerDetails.setLoans(loans);
+        customerDetails.setCards(cards);
+        return customerDetails;
+    }
+
+
+    @GetMapping("/sayHello")
+    @RateLimiter(name="sayHello", fallbackMethod = "sayHelloFallback")
+    public String sayHello(){
+        return "Hello, Welcome to EazyBank";
+    }
+
+    private CustomerDetails myCustomerDetailsFallBack(Customer customer, Throwable t) {
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
         List<Loans> loans = loansFeignClient.getLoansDetails(customer);
         CustomerDetails customerDetails = new CustomerDetails();
         customerDetails.setAccounts(accounts);
         customerDetails.setLoans(loans);
         return customerDetails;
+    }
+    private String sayHelloFallback(Throwable t){
+        return "Hi, welcome to EasyBank, This was the fallback";
     }
 
 }
