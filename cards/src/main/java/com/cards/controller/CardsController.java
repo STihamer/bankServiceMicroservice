@@ -23,7 +23,7 @@ public class CardsController {
     private final CardsServiceConfig cardsServiceConfig;
     private final CardsRepository cardsRepository;
 
-    @PostMapping("/myCards")
+    @PostMapping("myCards")
     public List<Cards> getCardDetails(@RequestBody Customer customer) {
         List<Cards> cards = cardsRepository.findByCustomerId(customer.getCustomerId());
         if (cards != null) {

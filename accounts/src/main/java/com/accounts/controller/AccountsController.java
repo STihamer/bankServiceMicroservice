@@ -14,16 +14,12 @@ import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
+
 @RestController
-@RequiredArgsConstructor
 public class AccountsController {
 
     @Autowired
@@ -40,81 +36,61 @@ public class AccountsController {
 
     @PostMapping("/myAccount")
     public Accounts getAccountDetails(@RequestBody Customer customer) {
+
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
         if (accounts != null) {
             return accounts;
         } else {
             return null;
         }
-    }
 
-
-    @PostMapping("/myAccounts")
-    public List<Accounts> getAccountsDetails(@RequestBody Customer customer) {
-        log.info("Yeahhhhhhhhhhhhhhhhhh");
-        List<Accounts> accounts = accountsRepository.findAllByCustomerId(customer.getCustomerId());
-        if (accounts != null) {
-            return accounts;
-        } else {
-            return null;
-        }
     }
 
     @GetMapping("/account/properties")
     public String getPropertyDetails() throws JsonProcessingException {
-        ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         Properties properties = new Properties(accountsConfig.getMsg(), accountsConfig.getBuildVersion(),
                 accountsConfig.getMailDetails(), accountsConfig.getActiveBranches());
-
-        String jsonStr = objectWriter.writeValueAsString(properties);
+        String jsonStr = ow.writeValueAsString(properties);
         return jsonStr;
     }
 
-    @PostMapping("myCustomerDetails")
-    @CircuitBreaker(name = "detailsForCustomerSupportApp", fallbackMethod = "myCustomerDetailsFallBack")
-    public CustomerDetails myCustomerDetails(@RequestBody Customer customer) {
+    @PostMapping("/myCustomerDetails")
+
+
+    @CircuitBreaker(name = "detailsForCustomerSupportApp",fallbackMethod="myCustomerDetailsFallBack")
+    @Retry(name = "retryForCustomerDetails", fallbackMethod = "myCustomerDetailsFallBack")
+    public CustomerDetails myCustomerDetails(@RequestHeader("eazybank-correlation-id") String correlationid,@RequestBody Customer customer) {
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
-        List<Loans> loans = loansFeignClient.getLoansDetails(customer);
-        List<Cards> cards = cardsFeignClient.getCardDetails(customer);
+        List<Loans> loans = loansFeignClient.getLoansDetails(correlationid,customer);
+        List<Cards> cards = cardsFeignClient.getCardDetails(correlationid,customer);
 
         CustomerDetails customerDetails = new CustomerDetails();
         customerDetails.setAccounts(accounts);
         customerDetails.setLoans(loans);
         customerDetails.setCards(cards);
+
         return customerDetails;
     }
 
-    @PostMapping("myRetryPattern")
-    @Retry(name ="retryForCustomerDetails", fallbackMethod = "myCustomerDetailsFallBack")
-    public CustomerDetails myRetryPattern(@RequestBody Customer customer) {
+    private CustomerDetails myCustomerDetailsFallBack(@RequestHeader("eazybank-correlation-id") String correlationid,Customer customer, Throwable t) {
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
-        List<Loans> loans = loansFeignClient.getLoansDetails(customer);
-        List<Cards> cards = cardsFeignClient.getCardDetails(customer);
-
+        List<Loans> loans = loansFeignClient.getLoansDetails(correlationid,customer);
         CustomerDetails customerDetails = new CustomerDetails();
         customerDetails.setAccounts(accounts);
         customerDetails.setLoans(loans);
-        customerDetails.setCards(cards);
         return customerDetails;
-    }
 
+    }
 
     @GetMapping("/sayHello")
-    @RateLimiter(name="sayHello", fallbackMethod = "sayHelloFallback")
-    public String sayHello(){
+    @RateLimiter(name = "sayHello", fallbackMethod = "sayHelloFallback")
+    public String sayHello() {
         return "Hello, Welcome to EazyBank";
     }
 
-    private CustomerDetails myCustomerDetailsFallBack(Customer customer, Throwable t) {
-        Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
-        List<Loans> loans = loansFeignClient.getLoansDetails(customer);
-        CustomerDetails customerDetails = new CustomerDetails();
-        customerDetails.setAccounts(accounts);
-        customerDetails.setLoans(loans);
-        return customerDetails;
-    }
-    private String sayHelloFallback(Throwable t){
-        return "Hi, welcome to EasyBank, This was the fallback";
+    private String sayHelloFallback(Throwable t) {
+        return "Hi, Welcome to EazyBank";
     }
 
 }
