@@ -9,6 +9,8 @@ import com.loans.model.Loans;
 import com.loans.model.Properties;
 import com.loans.repository.LoansRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,12 +24,14 @@ import java.util.List;
 public class LoansController {
 
 private final LoansServiceConfig loansServiceConfig;
+    private static final Logger logger = LoggerFactory.getLogger(Loans.class);
    private final LoansRepository loansRepository;
 
     @PostMapping("/myLoans")
     public List<Loans> getLoansDetails(@RequestBody Customer customer) {
-        System.out.println("Invoking Loans Microservice");
+        logger.info("getLoansDetails() method started");
         List<Loans> loans = loansRepository.findAllByCustomerIdOrderByStartDtDesc(customer.getCustomerId());
+        logger.info("getLoansDetails() method ended");
         if (loans != null) {
             return loans;
         } else {
