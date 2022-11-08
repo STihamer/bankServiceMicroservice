@@ -88,11 +88,11 @@ public class AccountsController {
     @GetMapping("/sayHello")
     @RateLimiter(name = "sayHello", fallbackMethod = "sayHelloFallback")
     public String sayHello() {
-        return "Hello, Welcome to EazyBank";
+        return "Hello, Welcome to EazyBank Kubernetes Cluster corrected";
     }
 
     private String sayHelloFallback(Throwable t) {
-        return "Hi, Welcome to EazyBank";
+        return "Hi, Welcome to EazyBank fallback";
     }
 
 }
