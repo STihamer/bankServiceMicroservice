@@ -16,7 +16,9 @@ import java.util.UUID;
 @Order(1)
 @Component
 public class RequestTraceFilter implements GlobalFilter {
+
     private static final Logger logger = LoggerFactory.getLogger(RequestTraceFilter.class);
+
     @Autowired
     FilterUtility filterUtility;
 
@@ -27,12 +29,13 @@ public class RequestTraceFilter implements GlobalFilter {
             logger.debug("EazyBank-correlation-id found in tracing filter: {}. ",
                     filterUtility.getCorrelationId(requestHeaders));
         } else {
-            String correlationId = generateCorrelationId();
-            filterUtility.setCorrelationId(exchange, correlationId);
-            logger.debug("EazyBank - correlation -id generated in tracing filter: {}. ", correlationId);
+            String correlationID = generateCorrelationId();
+            exchange = filterUtility.setCorrelationId(exchange, correlationID);
+            logger.debug("EazyBank-correlation-id generated in tracing filter: {}.", correlationID);
         }
         return chain.filter(exchange);
     }
+
     private boolean isCorrelationIdPresent(HttpHeaders requestHeaders) {
         if (filterUtility.getCorrelationId(requestHeaders) != null) {
             return true;
@@ -42,6 +45,7 @@ public class RequestTraceFilter implements GlobalFilter {
     }
 
     private String generateCorrelationId() {
-        return UUID.randomUUID().toString();
+        return java.util.UUID.randomUUID().toString();
     }
+
 }

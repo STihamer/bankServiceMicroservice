@@ -6,6 +6,7 @@
         <language minSize="64" name="Java" />
       </Languages>
     </inspection_tool>
+    <inspection_tool class="HelmUnknownTemplates" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="IncorrectHttpHeaderInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="customHeaders">
         <set>

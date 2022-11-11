@@ -1,5 +1,4 @@
 package com.accounts;
-import com.accounts.model.Accounts;
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.SpringApplication;

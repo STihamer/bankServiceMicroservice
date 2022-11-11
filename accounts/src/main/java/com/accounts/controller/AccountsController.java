@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @RestController
@@ -48,7 +49,7 @@ public class AccountsController {
 
     }
 
-    @GetMapping("/account/properties")
+    @GetMapping("/accounts/properties")
     public String getPropertyDetails() throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
         Properties properties = new Properties(accountsConfig.getMsg(), accountsConfig.getBuildVersion(),
@@ -58,13 +59,14 @@ public class AccountsController {
     }
 
     @PostMapping("/myCustomerDetails")
-    @CircuitBreaker(name = "detailsForCustomerSupportApp",fallbackMethod="myCustomerDetailsFallBack")
+    @CircuitBreaker(name = "detailsForCustomerSupportApp", fallbackMethod = "myCustomerDetailsFallBack")
     @Retry(name = "retryForCustomerDetails", fallbackMethod = "myCustomerDetailsFallBack")
-    public CustomerDetails myCustomerDetails(@RequestHeader("eazybank-correlation-id") String correlationid,@RequestBody Customer customer) {
+    public CustomerDetails myCustomerDetails(@RequestHeader("eazybank-correlation-id") String correlationid,
+                                             @RequestBody Customer customer) {
         logger.info("myCustomerDetails() method started");
         Accounts accounts = accountsRepository.findByCustomerId(customer.getCustomerId());
-        List<Loans> loans = loansFeignClient.getLoansDetails(correlationid,customer);
-        List<Cards> cards = cardsFeignClient.getCardDetails(correlationid,customer);
+        List<Loans> loans = loansFeignClient.getLoansDetails(correlationid, customer);
+        List<Cards> cards = cardsFeignClient.getCardDetails(correlationid, customer);
 
         CustomerDetails customerDetails = new CustomerDetails();
         customerDetails.setAccounts(accounts);
@@ -88,7 +90,9 @@ public class AccountsController {
     @GetMapping("/sayHello")
     @RateLimiter(name = "sayHello", fallbackMethod = "sayHelloFallback")
     public String sayHello() {
-        return "Hello, Welcome to EazyBank Kubernetes Cluster corrected";
+        return "Say hello";
+       /* Optional<String> podName = Optional.ofNullable(System.getenv("HOSTNAME"));
+        return "Hello, Welcome toEazyBank Kubernetes cluster from: " + podName.get();*/
     }
 
     private String sayHelloFallback(Throwable t) {
